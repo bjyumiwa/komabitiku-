@@ -1,0 +1,273 @@
+<html><head><base href="https://"><script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script><style>
+body {
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: #fff8e1;
+    background-image: linear-gradient(45deg, #ffd740 25%, transparent 25%),
+                      linear-gradient(-45deg, #ffd740 25%, transparent 25%),
+                      linear-gradient(45deg, transparent 75%, #ffd740 75%),
+                      linear-gradient(-45deg, transparent 75%, #ffd740 75%);
+    background-size: 20px 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border: 2px solid #ffc107;
+}
+
+h1 {
+    color: #212121;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2em;
+    text-shadow: 2px 2px 4px rgba(255, 193, 7, 0.3);
+}
+
+.form-group {
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #fff8e1;
+    border-radius: 15px;
+    border: 2px dashed #ffc107;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #212121;
+    font-weight: bold;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ffc107;
+    border-radius: 10px;
+    font-size: 1.1em;
+    margin-bottom: 15px;
+}
+
+.favorite-items {
+    margin: 15px 0;
+    padding: 10px;
+    background: white;
+    border-radius: 10px;
+}
+
+.favorite-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+.favorite-item input {
+    flex: 1;
+}
+
+.remove-btn {
+    background: #ff5252;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    width: auto;
+}
+
+.add-btn {
+    background: #4caf50;
+    color: white;
+    margin-top: 10px;
+}
+
+.result-section {
+    margin-top: 20px;
+    padding: 20px;
+    background: #fff8e1;
+    border-radius: 15px;
+    border: 2px solid #ffc107;
+}
+
+.result-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background: white;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.result-icon {
+    margin-right: 15px;
+    font-size: 1.5em;
+}
+
+button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 25px;
+    background: #ffc107;
+    color: #212121;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 1.1em;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    width: 100%;
+}
+
+button:hover {
+    background: #ffb300;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.total-summary {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+
+.favorite-foods-list {
+    margin-top: 15px;
+    padding: 10px;
+    background: white;
+    border-radius: 10px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.container {
+    animation: fadeIn 0.5s ease-in;
+}
+</style></head><body>
+<div id="app" class="container">
+    <h1>🏠 備蓄品計算アプリ</h1>
+    
+    <div class="form-group">
+        <label>📅 備蓄食日数:</label>
+        <input type="number" v-model.number="storageDays" min="1" required>
+        
+        <label>🍱 1日の食事回数:</label>
+        <input type="number" v-model.number="mealsPerDay" min="1" max="5" required>
+        
+        <label>🔧 缶の蓋が手で開けられるか:</label>
+        <select v-model="canOpener">
+            <option value="true">開けられる</option>
+            <option value="false">開けられない</option>
+        </select>
+        
+        <label>📦 パッケージが簡単に開けられるか:</label>
+        <select v-model="easyOpen">
+            <option value="true">簡単に開けられる</option>
+            <option value="false">開けにくい</option>
+        </select>
+        
+        <label>🍴 好みの食品タイプ:</label>
+        <select v-model="favoriteFoodType">
+            <option value="retort">レトルト食品</option>
+            <option value="freezeDried">フリーズドライ食品</option>
+            <option value="canned">缶詰食品</option>
+        </select>
+
+        <label>📝 好みの食品リスト:</label>
+        <div class="favorite-items">
+            <div v-for="(item, index) in favoriteItems" :key="index" class="favorite-item">
+                <input type="text" v-model="favoriteItems[index]" placeholder="食品名を入力">
+                <button class="remove-btn" @click="removeFavoriteItem(index)">削除</button>
+            </div>
+            <button class="add-btn" @click="addFavoriteItem">➕ 商品を追加</button>
+        </div>
+        
+        <button @click="calculateStockpile">📊 計算する</button>
+    </div>
+
+    <div v-if="showResults" class="result-section">
+        <h2>📋 必要な備蓄品の一覧</h2>
+        
+        <div class="result-item">
+            <span class="result-icon">🥫</span>
+            <div>必要な缶詰の総数: {{ totalCans }} 缶</div>
+        </div>
+        
+        <div class="result-item">
+            <span class="result-icon">💧</span>
+            <div>必要な水の総量: {{ totalWater }} リットル</div>
+        </div>
+        
+        <div class="result-item">
+            <span class="result-icon">📦</span>
+            <div>その他容易に開けられる食品の総数: {{ totalEasyOpen }} 個</div>
+        </div>
+        
+        <div class="result-item">
+            <span class="result-icon">⭐</span>
+            <div>好みの食品の必要数: {{ totalFavoriteFood }} 個</div>
+        </div>
+
+        <div class="favorite-foods-list" v-if="favoriteItems.length > 0">
+            <h3>🍱 選択した好みの食品:</h3>
+            <ul>
+                <li v-for="(item, index) in favoriteItems" :key="index">
+                    {{ item }}
+                </li>
+            </ul>
+        </div>
+
+        <div class="total-summary">
+            <h3>💡 アドバイス:</h3>
+            <ul>
+                <li v-if="!canOpener">プルトップ式の缶詰を選びましょう</li>
+                <li>3年程度保存可能な商品を選びましょう</li>
+                <li>定期的に賞味期限をチェックしましょう</li>
+                <li>ローリングストック法で管理することをお勧めします</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+new Vue({
+    el: '#app',
+    data: {
+        storageDays: 3,
+        mealsPerDay: 3,
+        canOpener: 'true',
+        easyOpen: 'true',
+        favoriteFoodType: 'retort',
+        favoriteItems: [''],
+        showResults: false,
+        totalCans: 0,
+        totalWater: 0,
+        totalEasyOpen: 0,
+        totalFavoriteFood: 0
+    },
+    methods: {
+        calculateStockpile() {
+            this.totalCans = this.storageDays * this.mealsPerDay * (this.canOpener === 'true' ? 1 : 2);
+            this.totalWater = this.storageDays * 3;
+            this.totalEasyOpen = this.storageDays * this.mealsPerDay * (this.easyOpen === 'true' ? 1 : 0);
+            this.totalFavoriteFood = this.storageDays * this.mealsPerDay;
+            this.showResults = true;
+        },
+        addFavoriteItem() {
+            this.favoriteItems.push('');
+        },
+        removeFavoriteItem(index) {
+            this.favoriteItems.splice(index, 1);
+            if (this.favoriteItems.length === 0) {
+                this.favoriteItems.push('');
+            }
+        }
+    }
+});
+</script></body></html>
